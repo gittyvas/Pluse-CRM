@@ -4,10 +4,9 @@ var createError = require("http-errors");
 var express = require("express");
 var path = require("path");
 var cookieParser = require("cookie-parser");
-// FIX: Corrected the quote for 'morgan' - MUST BE CONSISTENT QUOTES
 var logger = require("morgan"); // Consider 'tiny' or 'common' for production for less verbosity
 var cors = require("cors");
-var firebase = require("firebase-admin");
+var firebase = require("firebase-admin"); // Firebase Admin SDK
 
 // Load environment variables. In production, these are typically set directly in the environment.
 // For local development, ensure you have a .env file with these variables.
@@ -24,12 +23,15 @@ if (!process.env.APP_ID) {
   console.error('CRITICAL ERROR: APP_ID environment variable (Firebase Project ID) is not set!');
   process.exit(1);
 }
-if (!process.env.FIREBASE_CONFIG) {
-  console.error('CRITICAL ERROR: FIREBASE_CONFIG environment variable (stringified service account JSON) is not set!');
+
+// --- IMPORTANT: Use FIREBASE_CONFIG_BASE64 for the encoded string ---
+const firebaseConfigBase64 = process.env.FIREBASE_CONFIG_BASE64;
+if (!firebaseConfigBase64) {
+  console.error('CRITICAL ERROR: FIREBASE_CONFIG_BASE64 environment variable (Base64 encoded service account JSON) is not set!');
   process.exit(1);
 }
 
-// Set up CORS
+// --- Set up CORS ---
 app.use(
   cors({
     origin: process.env.FRONTEND_URL, // Use env var directly, no fallback
@@ -38,15 +40,24 @@ app.use(
 );
 
 // --- Initialize Firebase Admin SDK ---
-const firebaseConfig = JSON.parse(process.env.FIREBASE_CONFIG);
-const appId = process.env.APP_ID; // Use env var directly, no fallback
+// Decode the Base64 string first
+let serviceAccount;
+try {
+  const decodedConfigString = Buffer.from(firebaseConfigBase64, 'base64').toString('utf8');
+  serviceAccount = JSON.parse(decodedConfigString);
+} catch (error) {
+  console.error('CRITICAL ERROR: Failed to decode or parse FIREBASE_CONFIG_BASE64:', error.message);
+  process.exit(1);
+}
+
+const appId = process.env.APP_ID; // APP_ID is already checked at startup
 console.log(`Backend: Initializing Firebase Admin SDK for APP_ID: ${appId}`);
 
 const firebaseAdminApp = firebase.initializeApp({
-  credential: firebase.credential.cert(firebaseConfig),
-  databaseURL: `https://${firebaseConfig.projectId}.firebaseio.com`,
-  storageBucket: `${firebaseConfig.projectId}.appspot.com`,
-  projectId: firebaseConfig.projectId
+  credential: firebase.credential.cert(serviceAccount),
+  databaseURL: `https://${serviceAccount.projectId}.firebaseio.com`, // Use projectId from the parsed serviceAccount
+  storageBucket: `${serviceAccount.projectId}.appspot.com`, // Use projectId from the parsed serviceAccount
+  projectId: serviceAccount.projectId // Use projectId from the parsed serviceAccount
 }, appId);
 
 // Make Firestore instance available globally via app.locals (good practice)
@@ -95,3 +106,4 @@ app.use(function (err, req, res, next) {
 });
 
 module.exports = app;
+
