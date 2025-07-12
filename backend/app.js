@@ -24,11 +24,10 @@
       process.exit(1);
     }
 
-    // --- IMPORTANT: Use FIREBASE_CONFIG_BASE64 for the encoded string ---
-    // This variable will hold the Base64 encoded JSON string
-    const firebaseConfigBase64 = process.env.FIREBASE_CONFIG_BASE64;
-    if (!firebaseConfigBase64) {
-      console.error('CRITICAL ERROR: FIREBASE_CONFIG_BASE64 environment variable (Base64 encoded service account JSON) is not set!');
+    // --- IMPORTANT: Expecting FIREBASE_CONFIG as a direct JSON string ---
+    const firebaseConfigString = process.env.FIREBASE_CONFIG;
+    if (!firebaseConfigString) {
+      console.error('CRITICAL ERROR: FIREBASE_CONFIG environment variable (stringified service account JSON) is not set!');
       process.exit(1);
     }
 
@@ -43,12 +42,10 @@
     // --- Initialize Firebase Admin SDK ---
     let serviceAccount;
     try {
-      // Decode the Base64 string back to a JSON string
-      const decodedConfigString = Buffer.from(firebaseConfigBase64, 'base64').toString('utf8');
-      // Parse the JSON string into a JavaScript object
-      serviceAccount = JSON.parse(decodedConfigString);
+      // Directly parse the JSON string from the environment variable
+      serviceAccount = JSON.parse(firebaseConfigString);
     } catch (error) {
-      console.error('CRITICAL ERROR: Failed to decode or parse FIREBASE_CONFIG_BASE64:', error.message);
+      console.error('CRITICAL ERROR: Failed to parse FIREBASE_CONFIG JSON:', error.message);
       process.exit(1);
     }
 
@@ -56,9 +53,9 @@
     console.log(`Backend: Initializing Firebase Admin SDK for APP_ID: ${appId}`);
 
     // --- DEBUG LOG ---
-    // This will print the private key *after* decoding and parsing,
+    // This will print the private key *after* JSON.parse,
     // allowing us to verify its format if there are still issues.
-    console.log('DEBUG: Private Key received by app (after decoding/parsing):', serviceAccount.private_key);
+    console.log('DEBUG: Private Key received by app (after parsing):', serviceAccount.private_key);
     // --- END DEBUG LOG ---
 
     const firebaseAdminApp = firebase.initializeApp({
