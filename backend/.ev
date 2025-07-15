@@ -1,0 +1,11 @@
+APP_ID=pulse-crm-60584
+REDIRECT_URI="http://localhost:3000/auth/google/callback" # <--- CORRECTED LINE
+GOOGLE_CLIENT_ID="302755148635-69db6rvr4nm305fnfjn76pl9cm87h6ta.apps.googleusercontent.com"
+GOOGLE_CLIENT_SECRET="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"
+SESSION_SECRET="Cykh7fKVMYIcVxvAUmiUu4SqGXm9-U6qPXLV9094gZY"
+FRONTEND_URL="http://localhost:5173"
+PORT=3000
+JWT_SECRET=z0wec5bdjfF_gAv8dLPx7NbJrfznq8J4WV8ZzRx3WswkvUM6aUQBxXnfjIB5UPpT
+
+
+
